@@ -376,7 +376,7 @@
     </div>
 
     <div class="terminal-card">
-      <div class="terminal-card-header amber">4-Terminal Gauge (3kΩ coil)</div>
+      <div class="terminal-card-header amber">Sound Wave Relay (3kΩ coil)</div>
       <div class="terminal-row">
         <span class="terminal-name">Coil +</span>
         <span class="terminal-func">Coil positive</span>
@@ -394,7 +394,7 @@
       </div>
       <div class="terminal-row">
         <span class="terminal-name">Moving contact</span>
-        <span class="terminal-func">Alarm switch (on needle)</span>
+        <span class="terminal-func">Alarm switch (paddle)</span>
         <span class="terminal-ignore">Not used</span>
       </div>
     </div>
@@ -408,9 +408,9 @@
       <p>Same as before. 4mA full scale, resistor limits current. Simple analog drive.</p>
     </div>
     <div class="note-card amber">
-      <h3>4-Terminal Gauge (3kΩ)</h3>
+      <h3>Sound Wave Relay (3kΩ)</h3>
       <p><strong>GPIO26 (DAC2) → Coil + → Coil − → GND</strong></p>
-      <p>At 3kΩ, the max current from 3.3V is only 1.1mA — well within the ESP32 DAC's capability. No resistor needed. Direct drive.</p>
+      <p>This is a vintage <em>polarized relay</em>, not an analog meter — the paddle snaps between two positions rather than sweeping smoothly. Originally connected to a microphone in the vault to detect drilling vibrations. At 3kΩ, max current from 3.3V is only 1.1mA — no resistor needed. The relay snaps closed above a threshold current; use it as an on/off indicator.</p>
     </div>
     <div class="note-card purple">
       <h3>5-Terminal Gauge (36Ω)</h3>
@@ -526,7 +526,7 @@
       <!-- SECTION 2: 4-TERMINAL GAUGE (DAC2)     -->
       <!-- ═══════════════════════════════════════ -->
 
-      <text x="630" y="100" font-size="8" fill="#fbbf24" font-family="IBM Plex Mono" font-weight="700">4-TERMINAL (3kΩ) — DAC DIRECT</text>
+      <text x="630" y="100" font-size="8" fill="#fbbf24" font-family="IBM Plex Mono" font-weight="700">SOUND WAVE RELAY (3kΩ) — DAC DIRECT</text>
 
       <!-- Wire: GPIO26 → gauge (routed above GPIO25/resistor line) -->
       <path d="M185,203 L215,203 L215,138 L640,138 L640,200 L675,223" stroke="#fbbf24" stroke-width="2" fill="none"/>
@@ -541,7 +541,7 @@
         <line x1="80" y1="17" x2="80" y2="22" stroke="#333" stroke-width="1.2"/>
         <line x1="50" y1="66" x2="55" y2="62" stroke="#333" stroke-width="0.8"/>
         <line x1="110" y1="66" x2="105" y2="62" stroke="#333" stroke-width="0.8"/>
-        <text x="80" y="30" text-anchor="middle" font-size="5.5" fill="#333" font-family="serif" font-weight="700">4-TERMINAL GAUGE</text>
+        <text x="80" y="30" text-anchor="middle" font-size="5.5" fill="#333" font-family="serif" font-weight="700">SOUND WAVE RELAY</text>
         <text x="80" y="40" text-anchor="middle" font-size="5" fill="#555" font-family="serif">3kΩ COIL</text>
         <text x="80" y="88" text-anchor="middle" font-size="5.5" fill="#555" font-family="serif">O.B. McCLINTOCK CO.</text>
         <line x1="80" y1="78" x2="80" y2="25" stroke="#fbbf24" stroke-width="1.2" opacity="0.7"/>
@@ -852,52 +852,41 @@
           <span class="hl-str">}</span>
 
 <span class="hl-comment"># ═══════════════════════════════════════════════════</span>
-<span class="hl-comment"># EXAMPLE: Map real HA sensors to gauges</span>
-<span class="hl-comment"># Uncomment and customize any of these</span>
+<span class="hl-comment"># SOLAR INTEGRATION — SolarEdge (16.5kW system)</span>
+<span class="hl-comment"># Cloud API updates every ~15 min (rate limit).</span>
 <span class="hl-comment"># ═══════════════════════════════════════════════════</span>
 
-<span class="hl-comment"># sensor:</span>
-<span class="hl-comment">#</span>
-<span class="hl-comment">#   # ── Power usage → Milliamp Meter ──</span>
-<span class="hl-comment">#   # Full scale = 5000W</span>
-<span class="hl-comment">#   - platform: homeassistant</span>
-<span class="hl-comment">#     entity_id: sensor.home_power_usage</span>
-<span class="hl-comment">#     id: ha_power</span>
-<span class="hl-comment">#     on_value:</span>
-<span class="hl-comment">#       - output.set_level:</span>
-<span class="hl-comment">#           id: milli_dac</span>
-<span class="hl-comment">#           level: !lambda |-</span>
-<span class="hl-comment">#             float val = x / 5000.0;</span>
-<span class="hl-comment">#             return clamp(val, 0.0f, 1.0f);</span>
-<span class="hl-comment">#</span>
-<span class="hl-comment">#   # ── Outdoor temperature → 4-Terminal Gauge ──</span>
-<span class="hl-comment">#   # Maps 0°F–100°F to full scale</span>
-<span class="hl-comment">#   - platform: homeassistant</span>
-<span class="hl-comment">#     entity_id: sensor.outdoor_temperature</span>
-<span class="hl-comment">#     id: ha_outdoor_temp</span>
-<span class="hl-comment">#     on_value:</span>
-<span class="hl-comment">#       - output.set_level:</span>
-<span class="hl-comment">#           id: gauge4_dac</span>
-<span class="hl-comment">#           level: !lambda |-</span>
-<span class="hl-comment">#             float val = x / 100.0;</span>
-<span class="hl-comment">#             return clamp(val, 0.0f, 1.0f);</span>
-<span class="hl-comment">#</span>
-<span class="hl-comment">#   # ── Indoor temp deviation → 5-Terminal Gauge ──</span>
-<span class="hl-comment">#   # Centered at setpoint (72°F), deflects ±10°F</span>
-<span class="hl-comment">#   - platform: homeassistant</span>
-<span class="hl-comment">#     entity_id: sensor.ecobee_current_temperature</span>
-<span class="hl-comment">#     id: ha_indoor_temp</span>
-<span class="hl-comment">#     on_value:</span>
-<span class="hl-comment">#       - lambda: |-</span>
-<span class="hl-comment">#           float deviation = (x - 72.0) / 10.0;</span>
-<span class="hl-comment">#           deviation = clamp(deviation, -1.0f, 1.0f);</span>
-<span class="hl-comment">#           if (deviation >= 0) {</span>
-<span class="hl-comment">#             id(gauge5_in1).set_level(deviation);</span>
-<span class="hl-comment">#             id(gauge5_in2).set_level(0.0);</span>
-<span class="hl-comment">#           } else {</span>
-<span class="hl-comment">#             id(gauge5_in1).set_level(0.0);</span>
-<span class="hl-comment">#             id(gauge5_in2).set_level(-deviation);</span>
-<span class="hl-comment">#           }</span>
+<span class="hl-section">sensor:</span>
+
+  <span class="hl-comment"># ── Solar Generation → Milliamp Gauge ──</span>
+  <span class="hl-comment"># 0W = needle at rest, 16,500W = full scale</span>
+  <span class="hl-key">- platform:</span> <span class="hl-str">homeassistant</span>
+    <span class="hl-key">entity_id:</span> <span class="hl-str">sensor.solaredge_current_power</span>
+    <span class="hl-key">id:</span> <span class="hl-str">ha_solar_power</span>
+    <span class="hl-key">on_value:</span>
+      <span class="hl-key">- output.set_level:</span>
+          <span class="hl-key">id:</span> <span class="hl-str">milli_dac</span>
+          <span class="hl-key">level:</span> <span class="hl-str">!lambda |-</span>
+            <span class="hl-str">float val = x / 16500.0;</span>
+            <span class="hl-str">return clamp(val, 0.0f, 1.0f);</span>
+
+  <span class="hl-comment"># ── Generation vs capacity → 5-Terminal Gauge ──</span>
+  <span class="hl-comment"># Center = 50% output (8,250W), left = low, right = near peak</span>
+  <span class="hl-comment"># Replace with grid power sensor when available</span>
+  <span class="hl-key">- platform:</span> <span class="hl-str">homeassistant</span>
+    <span class="hl-key">entity_id:</span> <span class="hl-str">sensor.solaredge_current_power</span>
+    <span class="hl-key">id:</span> <span class="hl-str">ha_solar_for_gauge5</span>
+    <span class="hl-key">on_value:</span>
+      <span class="hl-key">- lambda:</span> <span class="hl-str">|-</span>
+          <span class="hl-str">float val = (x / 8250.0) - 1.0;</span>
+          <span class="hl-str">val = clamp(val, -1.0f, 1.0f);</span>
+          <span class="hl-str">if (val >= 0) {</span>
+          <span class="hl-str">  id(gauge5_in1).set_level(val);</span>
+          <span class="hl-str">  id(gauge5_in2).set_level(0.0);</span>
+          <span class="hl-str">} else {</span>
+          <span class="hl-str">  id(gauge5_in1).set_level(0.0);</span>
+          <span class="hl-str">  id(gauge5_in2).set_level(-val);</span>
+          <span class="hl-str">}</span>
 
 <span class="hl-comment"># ═══════════════════════════════════════════════════</span>
 <span class="hl-comment"># BONUS: Read the alarm contacts as binary sensors</span>
@@ -923,9 +912,10 @@
     </div>
 
     <div class="config-note">
-      <p><strong>What you get in Home Assistant:</strong> Three slider entities — "Milliamp Gauge" (0–100%), "4-Terminal Gauge" (0–100%), and "5-Terminal Gauge" (-100 to +100). Move the sliders, the needles move. Immediately.</p>
-      <p><strong>Sensor mapping examples:</strong> Three commented-out examples show real-world mappings. The Ecobee temperature deviation on the 5-terminal gauge is particularly fitting — centered when your house is at setpoint, deflects one way when too hot, the other when too cold. Very much in the spirit of what the "Balanced Relay" was originally designed to show.</p>
-      <p><strong>Bonus — alarm contacts:</strong> The commented-out binary_sensor block lets you read the physical alarm contacts. Wire m.c. to a GPIO input and f.c. to GND. When you drive the needle hard enough to trip the contact, HA sees it as a binary sensor turning on. You could trigger an actual Home Assistant automation from a 1940s alarm mechanism.</p>
+      <p><strong>What you get in Home Assistant:</strong> Three slider entities — "Milliamp Gauge" (0–100%), "4-Terminal Gauge" (0–100%), and "5-Terminal Gauge" (-100 to +100) for manual control, plus live solar sensor mappings.</p>
+      <p><strong>Solar integration (SolarEdge 16.5kW):</strong> The milliamp meter tracks current solar generation — <code>sensor.solaredge_current_power</code> scaled to 16,500W full scale. The 5-terminal gauge currently shows generation vs 50% capacity (needle centers at 8,250W). When a grid energy meter becomes available, swap the 5-terminal entity for net grid power to show import/export instead.</p>
+      <p><strong>Sound wave relay (4-terminal):</strong> This is a vintage polarized relay, not an analog meter. The paddle snaps between positions rather than sweeping. Best used as an on/off indicator — e.g., snap when solar is actively exporting, or when a security event triggers. The manual slider still works as a test control.</p>
+      <p><strong>Bonus — alarm contacts:</strong> The commented-out binary_sensor block lets you read the physical alarm contacts. Wire m.c. to a GPIO input and f.c. to GND. When you energize the coil enough to snap the paddle, HA sees it as a binary sensor. A 1940s alarm mechanism triggering a smart home automation.</p>
       <p><strong>Safety:</strong> The 5-terminal gauge outputs start at <code>max_power: 0.10</code> (10% duty cycle cap). The two DAC gauges are inherently current-limited by their coil resistance and the 820Ω resistor. Increase <code>max_power</code> gradually during calibration.</p>
     </div>
   </div>
@@ -946,7 +936,7 @@
     </div>
     <div class="step">
       <div class="step-num">3</div>
-      <div class="step-text"><strong>Test the 4-terminal gauge (3kΩ).</strong> Move its slider to 25%, then 50%, then 100%. Watch the needle. At 3kΩ the current is so low this should be very gentle. If 100% doesn't reach full deflection, that's fine — it means this gauge was designed for higher voltage operation. You can try powering it through a resistor from the 5V pin instead if you need more range.</div>
+      <div class="step-text"><strong>Test the sound wave relay (4-terminal, 3kΩ).</strong> This is a polarized relay, not an analog meter — the paddle snaps between positions rather than sweeping smoothly. Move its slider from 0% to 100% slowly and listen/watch for a snap. Note the threshold where it trips. It won't give proportional deflection; just on/off behavior above the pull-in current. That's normal and correct.</div>
     </div>
     <div class="step">
       <div class="step-num">4</div>
