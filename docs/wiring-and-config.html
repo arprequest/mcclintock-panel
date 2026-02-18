@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>McClintock Panel — Complete ESP32 Build Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1a1a1a;
+    --surface: #242424;
+    --surface2: #2e2e2e;
+    --border: #3a3a3a;
+    --green: #4ade80;
+    --amber: #fbbf24;
+    --red: #f87171;
+    --blue: #60a5fa;
+    --cyan: #22d3ee;
+    --purple: #c084fc;
+    --text: #e5e5e5;
+    --text-dim: #999;
+    --gauge-green: #4a6b4a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  .header {
+    padding: 2rem 2rem 1rem;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #222 0%, var(--bg) 100%);
+  }
+  .header h1 {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: 0.05em;
+    color: var(--green);
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+  }
+  .header .subtitle {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    overflow-x: auto;
+  }
+  .tab {
+    padding: 0.75rem 1.25rem;
+    cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    border: none;
+    background: none;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active {
+    color: var(--green);
+    border-bottom-color: var(--green);
+    background: rgba(74, 222, 128, 0.05);
+  }
+  .tab-content { display: none; padding: 2rem; }
+  .tab-content.active { display: block; }
+
+  .section-title {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text);
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .diagram-container {
+    max-width: 840px;
+    margin: 0 auto;
+  }
+  .wiring-svg {
+    width: 100%;
+    height: auto;
+    filter: drop-shadow(0 4px 20px rgba(0,0,0,0.3));
+  }
+
+  .notes-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-top: 2rem;
+    max-width: 840px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  @media (max-width: 700px) {
+    .notes-grid { grid-template-columns: 1fr; }
+  }
+  .note-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem;
+    border-left: 3px solid var(--green);
+  }
+  .note-card.amber { border-left-color: var(--amber); }
+  .note-card.blue { border-left-color: var(--blue); }
+  .note-card.red { border-left-color: var(--red); }
+  .note-card.purple { border-left-color: var(--purple); }
+  .note-card h3 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--green);
+    margin-bottom: 0.5rem;
+  }
+  .note-card.amber h3 { color: var(--amber); }
+  .note-card.blue h3 { color: var(--blue); }
+  .note-card.red h3 { color: var(--red); }
+  .note-card.purple h3 { color: var(--purple); }
+  .note-card p {
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: var(--text-dim);
+  }
+  .note-card p + p { margin-top: 0.5rem; }
+  .note-card code {
+    background: var(--bg);
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    color: var(--cyan);
+  }
+
+  .code-section { max-width: 840px; margin: 0 auto; }
+  .code-block {
+    background: #0d0d0d;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .code-filename {
+    font-size: 0.8rem;
+    color: var(--green);
+    font-weight: 600;
+  }
+  .copy-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 0.3rem 0.8rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all 0.2s;
+  }
+  .copy-btn:hover {
+    background: var(--green);
+    color: var(--bg);
+    border-color: var(--green);
+  }
+  .code-content {
+    padding: 1.25rem;
+    overflow-x: auto;
+    font-size: 0.76rem;
+    line-height: 1.7;
+    tab-size: 2;
+  }
+  .code-content pre {
+    margin: 0;
+    white-space: pre;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .hl-key { color: var(--cyan); }
+  .hl-str { color: var(--amber); }
+  .hl-comment { color: #666; font-style: italic; }
+  .hl-num { color: #c084fc; }
+  .hl-section { color: var(--red); font-weight: 700; }
+
+  .config-note {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-top: 1.5rem;
+    max-width: 840px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .config-note p {
+    font-size: 0.8rem;
+    line-height: 1.7;
+    color: var(--text-dim);
+  }
+  .config-note p + p { margin-top: 0.75rem; }
+  .config-note strong { color: var(--text); }
+
+  .bom-table {
+    width: 100%;
+    max-width: 840px;
+    margin: 0 auto;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+  }
+  .bom-table th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    background: var(--surface);
+    color: var(--green);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.7rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .bom-table td {
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-dim);
+  }
+  .bom-table tr:hover td { background: var(--surface); color: var(--text); }
+  .bom-qty {
+    font-weight: 700;
+    color: var(--text);
+    text-align: center;
+  }
+
+  .steps { max-width: 840px; margin: 2rem auto 0; }
+  .step {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    align-items: flex-start;
+  }
+  .step-num {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    background: var(--green);
+    color: var(--bg);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.75rem;
+  }
+  .step-text {
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: var(--text-dim);
+    padding-top: 0.2rem;
+  }
+  .step-text strong { color: var(--text); }
+  .step-text code {
+    background: var(--bg);
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    color: var(--cyan);
+  }
+
+  /* Terminal map */
+  .terminal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    max-width: 840px;
+    margin: 0 auto 2rem;
+  }
+  @media (max-width: 700px) {
+    .terminal-grid { grid-template-columns: 1fr; }
+  }
+  .terminal-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .terminal-card-header {
+    padding: 0.75rem 1rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+  }
+  .terminal-card-header.purple { background: rgba(192, 132, 252, 0.1); color: var(--purple); }
+  .terminal-card-header.amber { background: rgba(251, 191, 36, 0.1); color: var(--amber); }
+  .terminal-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    font-size: 0.78rem;
+    border-bottom: 1px solid #2a2a2a;
+  }
+  .terminal-row:last-child { border-bottom: none; }
+  .terminal-name { color: var(--text); font-weight: 600; }
+  .terminal-func { color: var(--text-dim); }
+  .terminal-use { color: var(--green); font-weight: 600; font-size: 0.7rem; text-transform: uppercase; }
+  .terminal-ignore { color: #555; font-size: 0.7rem; text-transform: uppercase; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>McClintock Panel × ESP32</h1>
+  <div class="subtitle">Complete build guide — updated with actual terminal measurements</div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="summary">Summary</button>
+  <button class="tab" data-tab="wiring">Wiring</button>
+  <button class="tab" data-tab="config">ESPHome YAML</button>
+  <button class="tab" data-tab="calibration">Calibration</button>
+  <button class="tab" data-tab="bom">Parts List</button>
+</div>
+
+<!-- SUMMARY TAB -->
+<div id="summary" class="tab-content active">
+  <div class="section-title">Terminal Map — What Connects Where</div>
+
+  <div class="terminal-grid">
+    <div class="terminal-card">
+      <div class="terminal-card-header purple">5-Terminal Gauge (36Ω coil)</div>
+      <div class="terminal-row">
+        <span class="terminal-name">+</span>
+        <span class="terminal-func">Coil positive</span>
+        <span class="terminal-use">→ DRV8871 OUT1</span>
+      </div>
+      <div class="terminal-row">
+        <span class="terminal-name">−</span>
+        <span class="terminal-func">Coil negative</span>
+        <span class="terminal-use">→ DRV8871 OUT2</span>
+      </div>
+      <div class="terminal-row">
+        <span class="terminal-name">res</span>
+        <span class="terminal-func">Coil tap (~770Ω from +)</span>
+        <span class="terminal-ignore">Not used</span>
+      </div>
+      <div class="terminal-row">
+        <span class="terminal-name">m.c.</span>
+        <span class="terminal-func">Moving contact (alarm switch)</span>
+        <span class="terminal-ignore">Not used</span>
+      </div>
+      <div class="terminal-row">
+        <span class="terminal-name">f.c.</span>
+        <span class="terminal-func">Fixed contact (alarm switch)</span>
+        <span class="terminal-ignore">Not used</span>
+      </div>
+    </div>
+
+    <div class="terminal-card">
+      <div class="terminal-card-header amber">4-Terminal Gauge (3kΩ coil)</div>
+      <div class="terminal-row">
+        <span class="terminal-name">Coil +</span>
+        <span class="terminal-func">Coil positive</span>
+        <span class="terminal-use">→ GPIO26 (DAC2)</span>
+      </div>
+      <div class="terminal-row">
+        <span class="terminal-name">Coil −</span>
+        <span class="terminal-func">Coil negative</span>
+        <span class="terminal-use">→ GND</span>
+      </div>
+      <div class="terminal-row">
+        <span class="terminal-name">Fixed contact</span>
+        <span class="terminal-func">Alarm switch (stationary)</span>
+        <span class="terminal-ignore">Not used</span>
+      </div>
+      <div class="terminal-row">
+        <span class="terminal-name">Moving contact</span>
+        <span class="terminal-func">Alarm switch (on needle)</span>
+        <span class="terminal-ignore">Not used</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Drive Strategy</div>
+  <div class="notes-grid" style="margin-top: 0;">
+    <div class="note-card">
+      <h3>Milliamp Meter</h3>
+      <p><strong>GPIO25 (DAC1) → 820Ω → Meter + → Meter − → GND</strong></p>
+      <p>Same as before. 4mA full scale, resistor limits current. Simple analog drive.</p>
+    </div>
+    <div class="note-card amber">
+      <h3>4-Terminal Gauge (3kΩ)</h3>
+      <p><strong>GPIO26 (DAC2) → Coil + → Coil − → GND</strong></p>
+      <p>At 3kΩ, the max current from 3.3V is only 1.1mA — well within the ESP32 DAC's capability. No resistor needed. Direct drive.</p>
+    </div>
+    <div class="note-card purple">
+      <h3>5-Terminal Gauge (36Ω)</h3>
+      <p><strong>GPIO16/17 (PWM) → DRV8871 → + and − terminals</strong></p>
+      <p>At 36Ω, direct drive would pull ~92mA — too much for the DAC. The DRV8871 handles the current. PWM duty cycle controls needle position.</p>
+    </div>
+    <div class="note-card blue">
+      <h3>Alarm Contacts</h3>
+      <p><strong>m.c./f.c. and fixed/moving contact — unused for driving.</strong></p>
+      <p>Fun bonus: you could wire these to ESP32 input pins and read them as binary sensors in HA. The needle physically closes a switch when it hits the trip point — a real electromechanical alarm in your smart home.</p>
+    </div>
+  </div>
+</div>
+
+<!-- WIRING TAB -->
+<div id="wiring" class="tab-content">
+  <div class="diagram-container">
+    <svg class="wiring-svg" viewBox="0 0 820 680" xmlns="http://www.w3.org/2000/svg">
+      <rect width="820" height="680" fill="#1a1a1a" rx="8"/>
+
+      <!-- Title -->
+      <text x="410" y="28" text-anchor="middle" font-size="12" fill="#666" font-family="IBM Plex Mono" font-weight="600">COMPLETE PANEL WIRING — UPDATED WITH ACTUAL TERMINAL MEASUREMENTS</text>
+
+      <!-- ═══ ESP32 ═══ -->
+      <rect x="30" y="80" width="155" height="480" rx="8" fill="#2a2a2a" stroke="#444" stroke-width="1.5"/>
+      <rect x="45" y="95" width="125" height="36" rx="4" fill="#1a1a1a"/>
+      <text x="107" y="117" text-anchor="middle" fill="#60a5fa" font-size="13" font-family="IBM Plex Mono" font-weight="600">ESP32</text>
+
+      <g font-family="IBM Plex Mono" font-size="8.5" font-weight="600">
+        <!-- DAC pins -->
+        <rect x="155" y="160" width="30" height="16" rx="2" fill="#333" stroke="#4ade80" stroke-width="1"/>
+        <text x="170" y="171" text-anchor="middle" fill="#4ade80">GP25</text>
+        <text x="78" y="171" text-anchor="middle" fill="#666" font-size="7">DAC1</text>
+
+        <rect x="155" y="195" width="30" height="16" rx="2" fill="#333" stroke="#fbbf24" stroke-width="1"/>
+        <text x="170" y="206" text-anchor="middle" fill="#fbbf24">GP26</text>
+        <text x="78" y="206" text-anchor="middle" fill="#666" font-size="7">DAC2</text>
+
+        <!-- PWM pins -->
+        <rect x="155" y="290" width="30" height="16" rx="2" fill="#333" stroke="#c084fc" stroke-width="1"/>
+        <text x="170" y="301" text-anchor="middle" fill="#c084fc">GP16</text>
+        <text x="78" y="301" text-anchor="middle" fill="#666" font-size="7">PWM</text>
+
+        <rect x="155" y="320" width="30" height="16" rx="2" fill="#333" stroke="#c084fc" stroke-width="1"/>
+        <text x="170" y="331" text-anchor="middle" fill="#c084fc">GP17</text>
+        <text x="78" y="331" text-anchor="middle" fill="#666" font-size="7">PWM</text>
+
+        <!-- Power -->
+        <rect x="155" y="460" width="30" height="16" rx="2" fill="#333" stroke="#f87171" stroke-width="1"/>
+        <text x="170" y="471" text-anchor="middle" fill="#f87171">3V3</text>
+
+        <rect x="155" y="490" width="30" height="16" rx="2" fill="#333" stroke="#888" stroke-width="1"/>
+        <text x="170" y="501" text-anchor="middle" fill="#888">GND</text>
+      </g>
+
+      <!-- Section labels -->
+      <text x="410" y="68" text-anchor="middle" font-size="9" fill="#555" font-family="IBM Plex Mono">
+        DAC direct drive (top) · DRV8871 H-bridge (middle) · Power (bottom)
+      </text>
+
+      <!-- ═══════════════════════════════════════ -->
+      <!-- SECTION 1: MILLIAMP METER (DAC1) -->
+      <!-- ═══════════════════════════════════════ -->
+
+      <!-- Section divider -->
+      <line x1="220" y1="100" x2="220" y2="240" stroke="#333" stroke-width="1" stroke-dasharray="4,4"/>
+      <text x="230" y="100" font-size="8" fill="#4ade80" font-family="IBM Plex Mono" font-weight="700">MILLIAMP METER — DAC DIRECT</text>
+
+      <!-- Wire: GPIO25 → Resistor -->
+      <path d="M185,168 L290,168" stroke="#4ade80" stroke-width="2" fill="none"/>
+      <circle cx="185" cy="168" r="2.5" fill="#4ade80"/>
+
+      <!-- Resistor R1 -->
+      <rect x="290" y="157" width="65" height="22" rx="3" fill="#2e2e2e" stroke="#666" stroke-width="1.5"/>
+      <rect x="301" y="160" width="3" height="16" rx="1" fill="#a0522d"/>
+      <rect x="308" y="160" width="3" height="16" rx="1" fill="#a0522d"/>
+      <rect x="315" y="160" width="3" height="16" rx="1" fill="#ff0000"/>
+      <rect x="322" y="160" width="3" height="16" rx="1" fill="#c0c0c0"/>
+      <text x="322" y="150" text-anchor="middle" font-size="9" fill="#4ade80" font-family="IBM Plex Mono" font-weight="600">820Ω</text>
+
+      <!-- Wire: Resistor → Meter -->
+      <path d="M355,168 L430,168" stroke="#4ade80" stroke-width="2" fill="none"/>
+
+      <!-- Milliamp Meter -->
+      <g transform="translate(430, 105)">
+        <rect width="160" height="130" rx="8" fill="var(--gauge-green)" stroke="#5a7a5a" stroke-width="1.5"/>
+        <circle cx="80" cy="55" r="42" fill="#f5f0e0" stroke="#333" stroke-width="2"/>
+        <path d="M48,68 Q80,18 112,68" fill="none" stroke="#333" stroke-width="1"/>
+        <line x1="50" y1="66" x2="55" y2="62" stroke="#333" stroke-width="0.8"/>
+        <line x1="80" y1="17" x2="80" y2="22" stroke="#333" stroke-width="0.8"/>
+        <line x1="110" y1="66" x2="105" y2="62" stroke="#333" stroke-width="0.8"/>
+        <text x="80" y="32" text-anchor="middle" font-size="6.5" fill="#333" font-family="serif" font-weight="700">MILLIAMPERES</text>
+        <text x="80" y="88" text-anchor="middle" font-size="5.5" fill="#555" font-family="serif">O.B. McCLINTOCK CO.</text>
+        <!-- Needle -->
+        <line x1="80" y1="78" x2="62" y2="40" stroke="#333" stroke-width="1.2"/>
+        <circle cx="80" cy="78" r="3" fill="#333"/>
+        <!-- Terminals -->
+        <circle cx="55" cy="118" r="5" fill="#888" stroke="#aaa" stroke-width="1"/>
+        <text x="55" y="121" text-anchor="middle" font-size="6" fill="#222" font-weight="700">+</text>
+        <circle cx="105" cy="118" r="5" fill="#888" stroke="#aaa" stroke-width="1"/>
+        <text x="105" y="121" text-anchor="middle" font-size="6" fill="#222" font-weight="700">−</text>
+      </g>
+
+      <!-- Wire into meter + -->
+      <path d="M430,168 L430,215 L485,223" stroke="#4ade80" stroke-width="2" fill="none"/>
+      <circle cx="485" cy="223" r="2.5" fill="#4ade80"/>
+
+      <!-- Wire from meter − to GND bus -->
+      <path d="M535,223 L560,223 L560,500 L185,500" stroke="#888" stroke-width="2" fill="none"/>
+      <circle cx="535" cy="223" r="2.5" fill="#888"/>
+
+      <!-- ═══════════════════════════════════════ -->
+      <!-- SECTION 2: 4-TERMINAL GAUGE (DAC2)     -->
+      <!-- ═══════════════════════════════════════ -->
+
+      <text x="630" y="100" font-size="8" fill="#fbbf24" font-family="IBM Plex Mono" font-weight="700">4-TERMINAL (3kΩ) — DAC DIRECT</text>
+
+      <!-- Wire: GPIO26 → gauge (routed above GPIO25/resistor line) -->
+      <path d="M185,203 L215,203 L215,138 L640,138 L640,200 L675,223" stroke="#fbbf24" stroke-width="2" fill="none"/>
+      <circle cx="185" cy="203" r="2.5" fill="#fbbf24"/>
+
+      <!-- 4-Terminal Gauge -->
+      <g transform="translate(620, 105)">
+        <rect width="160" height="130" rx="8" fill="var(--gauge-green)" stroke="#5a7a5a" stroke-width="1.5"/>
+        <circle cx="80" cy="55" r="42" fill="#f5f0e0" stroke="#333" stroke-width="2"/>
+        <!-- Center-zero scale -->
+        <path d="M48,68 Q80,18 112,68" fill="none" stroke="#333" stroke-width="1"/>
+        <line x1="80" y1="17" x2="80" y2="22" stroke="#333" stroke-width="1.2"/>
+        <line x1="50" y1="66" x2="55" y2="62" stroke="#333" stroke-width="0.8"/>
+        <line x1="110" y1="66" x2="105" y2="62" stroke="#333" stroke-width="0.8"/>
+        <text x="80" y="30" text-anchor="middle" font-size="5.5" fill="#333" font-family="serif" font-weight="700">4-TERMINAL GAUGE</text>
+        <text x="80" y="40" text-anchor="middle" font-size="5" fill="#555" font-family="serif">3kΩ COIL</text>
+        <text x="80" y="88" text-anchor="middle" font-size="5.5" fill="#555" font-family="serif">O.B. McCLINTOCK CO.</text>
+        <line x1="80" y1="78" x2="80" y2="25" stroke="#fbbf24" stroke-width="1.2" opacity="0.7"/>
+        <circle cx="80" cy="78" r="3" fill="#333"/>
+        <circle cx="55" cy="118" r="5" fill="#888" stroke="#aaa" stroke-width="1"/>
+        <text x="55" y="121" text-anchor="middle" font-size="5" fill="#222" font-weight="700">C+</text>
+        <circle cx="105" cy="118" r="5" fill="#888" stroke="#aaa" stroke-width="1"/>
+        <text x="105" y="121" text-anchor="middle" font-size="5" fill="#222" font-weight="700">C−</text>
+      </g>
+
+      <!-- Wire into Coil + -->
+      <circle cx="675" cy="223" r="2.5" fill="#fbbf24"/>
+
+      <!-- Wire from Coil − to GND bus -->
+      <path d="M725,223 L750,223 L750,500 L560,500" stroke="#888" stroke-width="2" fill="none"/>
+      <circle cx="725" cy="223" r="2.5" fill="#888"/>
+      <circle cx="560" cy="500" r="2.5" fill="#888"/>
+
+      <!-- "No resistor needed" label -->
+      <text x="700" y="155" text-anchor="middle" font-size="8" fill="#fbbf24" font-family="IBM Plex Mono" font-style="italic">No resistor needed!</text>
+      <text x="700" y="165" text-anchor="middle" font-size="7" fill="#666" font-family="IBM Plex Mono">3.3V ÷ 3kΩ = 1.1mA</text>
+
+      <!-- ═══════════════════════════════════════ -->
+      <!-- SECTION 3: 5-TERMINAL GAUGE (DRV8871)  -->
+      <!-- ═══════════════════════════════════════ -->
+
+      <line x1="220" y1="260" x2="220" y2="440" stroke="#333" stroke-width="1" stroke-dasharray="4,4"/>
+      <text x="230" y="270" font-size="8" fill="#c084fc" font-family="IBM Plex Mono" font-weight="700">5-TERMINAL (36Ω) — DRV8871 H-BRIDGE</text>
+
+      <!-- DRV8871 -->
+      <rect x="290" y="285" width="150" height="120" rx="6" fill="#2a2a2a" stroke="#c084fc" stroke-width="1.5"/>
+      <text x="365" y="305" text-anchor="middle" fill="#c084fc" font-size="10" font-family="IBM Plex Mono" font-weight="700">DRV8871</text>
+      <text x="365" y="317" text-anchor="middle" fill="#666" font-size="7.5" font-family="IBM Plex Mono">H-Bridge Motor Driver</text>
+
+      <g font-family="IBM Plex Mono" font-size="8" font-weight="600">
+        <text x="300" y="345" fill="#c084fc">IN1</text>
+        <text x="300" y="365" fill="#c084fc">IN2</text>
+        <text x="300" y="390" fill="#f87171">VM</text>
+        <text x="300" y="400" fill="#888">GND</text>
+        <text x="418" y="345" fill="#4ade80">OUT1</text>
+        <text x="418" y="365" fill="#4ade80">OUT2</text>
+      </g>
+
+      <!-- Wire: GPIO16 → IN1 -->
+      <path d="M185,298 L295,343" stroke="#c084fc" stroke-width="2" fill="none"/>
+      <circle cx="185" cy="298" r="2.5" fill="#c084fc"/>
+      <circle cx="295" cy="343" r="2.5" fill="#c084fc"/>
+
+      <!-- Wire: GPIO17 → IN2 -->
+      <path d="M185,328 L250,345 L295,363" stroke="#c084fc" stroke-width="2" fill="none"/>
+      <circle cx="185" cy="328" r="2.5" fill="#c084fc"/>
+      <circle cx="295" cy="363" r="2.5" fill="#c084fc"/>
+
+      <!-- 5-Terminal Gauge -->
+      <g transform="translate(540, 285)">
+        <rect width="175" height="145" rx="8" fill="var(--gauge-green)" stroke="#5a7a5a" stroke-width="1.5"/>
+        <circle cx="87" cy="58" r="45" fill="#f5f0e0" stroke="#333" stroke-width="2"/>
+        <path d="M52,72 Q87,18 122,72" fill="none" stroke="#333" stroke-width="1"/>
+        <line x1="87" y1="18" x2="87" y2="24" stroke="#333" stroke-width="1.2"/>
+        <line x1="54" y1="70" x2="59" y2="66" stroke="#333" stroke-width="0.8"/>
+        <line x1="120" y1="70" x2="115" y2="66" stroke="#333" stroke-width="0.8"/>
+        <text x="87" y="32" text-anchor="middle" font-size="5.5" fill="#333" font-family="serif" font-weight="700">5-TERMINAL GAUGE</text>
+        <text x="87" y="42" text-anchor="middle" font-size="5" fill="#555" font-family="serif">36Ω COIL</text>
+        <text x="87" y="92" text-anchor="middle" font-size="5.5" fill="#555" font-family="serif">O.B. McCLINTOCK CO.</text>
+        <line x1="87" y1="82" x2="87" y2="28" stroke="#c084fc" stroke-width="1.2" opacity="0.7"/>
+        <circle cx="87" cy="82" r="3" fill="#333"/>
+        <!-- Only showing + and - terminals (the ones we use) -->
+        <circle cx="62" cy="128" r="5" fill="#888" stroke="#aaa" stroke-width="1"/>
+        <text x="62" y="131" text-anchor="middle" font-size="6" fill="#222" font-weight="700">+</text>
+        <circle cx="112" cy="128" r="5" fill="#888" stroke="#aaa" stroke-width="1"/>
+        <text x="112" y="131" text-anchor="middle" font-size="6" fill="#222" font-weight="700">−</text>
+        <!-- Unused terminals (dimmed) -->
+        <circle cx="30" cy="128" r="4" fill="#555" stroke="#666" stroke-width="0.8" opacity="0.4"/>
+        <text x="30" y="143" text-anchor="middle" font-size="5" fill="#555" font-family="IBM Plex Mono" opacity="0.5">res</text>
+        <circle cx="145" cy="128" r="4" fill="#555" stroke="#666" stroke-width="0.8" opacity="0.4"/>
+        <text x="145" y="143" text-anchor="middle" font-size="5" fill="#555" font-family="IBM Plex Mono" opacity="0.5">m.c.</text>
+        <text x="87" y="143" text-anchor="middle" font-size="5" fill="#555" font-family="IBM Plex Mono" opacity="0.5">f.c. (underneath)</text>
+      </g>
+
+      <!-- Wire: DRV OUT1 → gauge + -->
+      <path d="M445,343 L510,343 L510,405 L602,413" stroke="#4ade80" stroke-width="2" fill="none"/>
+      <circle cx="445" cy="343" r="2.5" fill="#4ade80"/>
+      <circle cx="602" cy="413" r="2.5" fill="#4ade80"/>
+
+      <!-- Wire: DRV OUT2 → gauge - -->
+      <path d="M445,363 L520,363 L520,413 L652,413" stroke="#4ade80" stroke-width="2" fill="none"/>
+      <circle cx="445" cy="363" r="2.5" fill="#4ade80"/>
+      <circle cx="652" cy="413" r="2.5" fill="#4ade80"/>
+
+      <!-- Power: 3V3 → DRV VM -->
+      <path d="M185,468 L260,468 L260,388 L295,388" stroke="#f87171" stroke-width="2" fill="none"/>
+      <circle cx="185" cy="468" r="2.5" fill="#f87171"/>
+      <circle cx="295" cy="388" r="2.5" fill="#f87171"/>
+
+      <!-- GND → DRV GND -->
+      <path d="M185,498 L265,498 L265,398 L295,398" stroke="#888" stroke-width="2" fill="none"/>
+      <circle cx="265" cy="398" r="2.5" fill="#888"/>
+
+      <!-- Main GND line -->
+      <circle cx="185" cy="498" r="2.5" fill="#888"/>
+      <path d="M265,498 L750,500" stroke="#888" stroke-width="2" fill="none"/>
+
+      <!-- GND symbol -->
+      <g transform="translate(380, 508)">
+        <line x1="0" y1="0" x2="20" y2="0" stroke="#888" stroke-width="2"/>
+        <line x1="4" y1="5" x2="16" y2="5" stroke="#888" stroke-width="1.5"/>
+        <line x1="7" y1="10" x2="13" y2="10" stroke="#888" stroke-width="1"/>
+      </g>
+
+      <!-- Legend -->
+      <g transform="translate(30, 570)" font-family="IBM Plex Mono" font-size="8.5">
+        <rect x="-10" y="-15" width="790" height="85" rx="6" fill="#242424" stroke="#3a3a3a" stroke-width="1"/>
+
+        <text x="0" y="0" fill="#888" font-weight="700" font-size="9">PIN ASSIGNMENT SUMMARY</text>
+
+        <line x1="0" y1="18" x2="16" y2="18" stroke="#4ade80" stroke-width="2.5"/>
+        <text x="22" y="22" fill="#999">GPIO25 (DAC1) → 820Ω → Milliamp Meter (4mA full scale)</text>
+
+        <line x1="0" y1="36" x2="16" y2="36" stroke="#fbbf24" stroke-width="2.5"/>
+        <text x="22" y="40" fill="#999">GPIO26 (DAC2) → 4-Terminal Gauge direct (3kΩ, ~1.1mA max)</text>
+
+        <line x1="0" y1="54" x2="16" y2="54" stroke="#c084fc" stroke-width="2.5"/>
+        <text x="22" y="58" fill="#999">GPIO16/17 (PWM) → DRV8871 → 5-Terminal Gauge (36Ω coil)</text>
+
+        <line x1="460" y1="18" x2="476" y2="18" stroke="#f87171" stroke-width="2.5"/>
+        <text x="482" y="22" fill="#999">3.3V power (or 5V VIN if more drive needed)</text>
+
+        <line x1="460" y1="36" x2="476" y2="36" stroke="#888" stroke-width="2.5"/>
+        <text x="482" y="40" fill="#999">Common ground</text>
+      </g>
+    </svg>
+  </div>
+
+  <div class="notes-grid">
+    <div class="note-card">
+      <h3>3kΩ Gauge — Why No Resistor?</h3>
+      <p>At 3kΩ, the maximum current from 3.3V is only 1.1mA. The ESP32 DAC can source up to ~12mA, so there's huge margin. The coil's own resistance is the current limiter. If you want extra safety, add a 1kΩ resistor in series (drops max to ~0.8mA).</p>
+    </div>
+    <div class="note-card purple">
+      <h3>36Ω Gauge — Why DRV8871?</h3>
+      <p>At 36Ω, even 3.3V would push ~92mA — far more than the ESP32 can source. The DRV8871 handles the current, and PWM duty cycle controls how much actually flows. The <code>max_power</code> setting in ESPHome caps the duty cycle as a safety limit.</p>
+    </div>
+    <div class="note-card amber">
+      <h3>Unused Terminals</h3>
+      <p>The alarm contacts (m.c., f.c., fixed contact, moving contact) aren't needed for driving the needle. But they're a cool bonus — wire them to ESP32 GPIO inputs and you get a physical alarm trip sensor in Home Assistant.</p>
+    </div>
+    <div class="note-card red">
+      <h3>VM Voltage</h3>
+      <p>Start with 3.3V on the DRV8871's VM pin. If the 36Ω gauge doesn't deflect enough, move VM to the ESP32's <code>VIN</code>/<code>5V</code> pin for more headroom. Reduce <code>max_power</code> when you increase voltage.</p>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIG TAB -->
+<div id="config" class="tab-content">
+  <div class="code-section">
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-filename">mcclintock-panel.yaml</span>
+        <button class="copy-btn" onclick="copyCode()">Copy</button>
+      </div>
+      <div class="code-content">
+<pre id="yaml-code"><span class="hl-comment"># ═══════════════════════════════════════════════════</span>
+<span class="hl-comment"># McClintock Panel — Complete ESPHome Config</span>
+<span class="hl-comment"># Based on actual terminal measurements:</span>
+<span class="hl-comment">#   Milliamp meter:    ~4mA full scale (DAC + 820Ω)</span>
+<span class="hl-comment">#   4-terminal gauge:  3kΩ coil (DAC direct, no resistor)</span>
+<span class="hl-comment">#   5-terminal gauge:  36Ω coil (DRV8871 H-bridge)</span>
+<span class="hl-comment"># ═══════════════════════════════════════════════════</span>
+
+<span class="hl-section">esphome:</span>
+  <span class="hl-key">name:</span> <span class="hl-str">mcclintock-panel</span>
+  <span class="hl-key">friendly_name:</span> <span class="hl-str">McClintock Panel</span>
+  <span class="hl-key">on_boot:</span>
+    <span class="hl-key">priority:</span> <span class="hl-num">-100</span>
+    <span class="hl-key">then:</span>
+      <span class="hl-comment"># ── Boot sweep: self-test all three gauges ──</span>
+      <span class="hl-comment"># Zero everything</span>
+      <span class="hl-key">- output.set_level:</span> { <span class="hl-key">id:</span> <span class="hl-str">milli_dac</span>, <span class="hl-key">level:</span> <span class="hl-num">0.0</span> }
+      <span class="hl-key">- output.set_level:</span> { <span class="hl-key">id:</span> <span class="hl-str">gauge4_dac</span>, <span class="hl-key">level:</span> <span class="hl-num">0.0</span> }
+      <span class="hl-key">- output.set_level:</span> { <span class="hl-key">id:</span> <span class="hl-str">gauge5_in1</span>, <span class="hl-key">level:</span> <span class="hl-num">0.0</span> }
+      <span class="hl-key">- output.set_level:</span> { <span class="hl-key">id:</span> <span class="hl-str">gauge5_in2</span>, <span class="hl-key">level:</span> <span class="hl-num">0.0</span> }
+      <span class="hl-key">- delay:</span> <span class="hl-str">500ms</span>
+      <span class="hl-comment"># Sweep up / right</span>
+      <span class="hl-key">- output.set_level:</span> { <span class="hl-key">id:</span> <span class="hl-str">milli_dac</span>, <span class="hl-key">level:</span> <span class="hl-num">1.0</span> }
+      <span class="hl-key">- output.set_level:</span> { <span class="hl-key">id:</span> <span class="hl-str">gauge4_dac</span>, <span class="hl-key">level:</span> <span class="hl-num">1.0</span> }
+      <span class="hl-key">- output.set_level:</span> { <span class="hl-key">id:</span> <span class="hl-str">gauge5_in1</span>, <span class="hl-key">level:</span> <span class="hl-num">1.0</span> }
+      <span class="hl-key">- delay:</span> <span class="hl-str">600ms</span>
+      <span class="hl-comment"># Sweep down / left (5-terminal only)</span>
+      <span class="hl-key">- output.set_level:</span> { <span class="hl-key">id:</span> <span class="hl-str">gauge5_in1</span>, <span class="hl-key">level:</span> <span class="hl-num">0.0</span> }
+      <span class="hl-key">- output.set_level:</span> { <span class="hl-key">id:</span> <span class="hl-str">gauge5_in2</span>, <span class="hl-key">level:</span> <span class="hl-num">1.0</span> }
+      <span class="hl-key">- delay:</span> <span class="hl-str">600ms</span>
+      <span class="hl-comment"># Return to rest</span>
+      <span class="hl-key">- output.set_level:</span> { <span class="hl-key">id:</span> <span class="hl-str">milli_dac</span>, <span class="hl-key">level:</span> <span class="hl-num">0.0</span> }
+      <span class="hl-key">- output.set_level:</span> { <span class="hl-key">id:</span> <span class="hl-str">gauge4_dac</span>, <span class="hl-key">level:</span> <span class="hl-num">0.0</span> }
+      <span class="hl-key">- output.set_level:</span> { <span class="hl-key">id:</span> <span class="hl-str">gauge5_in2</span>, <span class="hl-key">level:</span> <span class="hl-num">0.0</span> }
+      <span class="hl-key">- delay:</span> <span class="hl-str">300ms</span>
+
+<span class="hl-section">esp32:</span>
+  <span class="hl-key">board:</span> <span class="hl-str">esp32dev</span>
+
+<span class="hl-section">api:</span>
+  <span class="hl-key">encryption:</span>
+    <span class="hl-key">key:</span> <span class="hl-str">"YOUR_API_KEY_HERE"</span>
+
+<span class="hl-section">ota:</span>
+  <span class="hl-key">- platform:</span> <span class="hl-str">esphome</span>
+    <span class="hl-key">password:</span> <span class="hl-str">"YOUR_OTA_PASSWORD"</span>
+
+<span class="hl-section">wifi:</span>
+  <span class="hl-key">ssid:</span> <span class="hl-str">!secret wifi_ssid</span>
+  <span class="hl-key">password:</span> <span class="hl-str">!secret wifi_password</span>
+  <span class="hl-key">ap:</span>
+    <span class="hl-key">ssid:</span> <span class="hl-str">"McClintock Fallback"</span>
+    <span class="hl-key">password:</span> <span class="hl-str">"fallback123"</span>
+
+<span class="hl-section">captive_portal:</span>
+
+<span class="hl-comment"># ═══════════════════════════════════════════════════</span>
+<span class="hl-comment"># OUTPUTS</span>
+<span class="hl-comment"># ═══════════════════════════════════════════════════</span>
+
+<span class="hl-section">output:</span>
+
+  <span class="hl-comment"># ── Milliamp Meter: DAC + 820Ω resistor ──</span>
+  <span class="hl-key">- platform:</span> <span class="hl-str">esp32_dac</span>
+    <span class="hl-key">id:</span> <span class="hl-str">milli_dac</span>
+    <span class="hl-key">pin:</span> <span class="hl-str">GPIO25</span>
+    <span class="hl-key">max_power:</span> <span class="hl-num">1.0</span>
+
+  <span class="hl-comment"># ── 4-Terminal Gauge (3kΩ): DAC direct, no resistor ──</span>
+  <span class="hl-key">- platform:</span> <span class="hl-str">esp32_dac</span>
+    <span class="hl-key">id:</span> <span class="hl-str">gauge4_dac</span>
+    <span class="hl-key">pin:</span> <span class="hl-str">GPIO26</span>
+    <span class="hl-key">max_power:</span> <span class="hl-num">1.0</span>
+
+  <span class="hl-comment"># ── 5-Terminal Gauge (36Ω): DRV8871 H-bridge ──</span>
+  <span class="hl-key">- platform:</span> <span class="hl-str">ledc</span>
+    <span class="hl-key">id:</span> <span class="hl-str">gauge5_in1</span>
+    <span class="hl-key">pin:</span> <span class="hl-str">GPIO16</span>
+    <span class="hl-key">frequency:</span> <span class="hl-num">1000</span><span class="hl-str"> Hz</span>
+    <span class="hl-key">max_power:</span> <span class="hl-num">0.10</span>  <span class="hl-comment"># START LOW — increase during calibration</span>
+
+  <span class="hl-key">- platform:</span> <span class="hl-str">ledc</span>
+    <span class="hl-key">id:</span> <span class="hl-str">gauge5_in2</span>
+    <span class="hl-key">pin:</span> <span class="hl-str">GPIO17</span>
+    <span class="hl-key">frequency:</span> <span class="hl-num">1000</span><span class="hl-str"> Hz</span>
+    <span class="hl-key">max_power:</span> <span class="hl-num">0.10</span>  <span class="hl-comment"># START LOW</span>
+
+<span class="hl-comment"># ═══════════════════════════════════════════════════</span>
+<span class="hl-comment"># HOME ASSISTANT CONTROLS</span>
+<span class="hl-comment"># ═══════════════════════════════════════════════════</span>
+
+<span class="hl-section">number:</span>
+
+  <span class="hl-comment"># ── Milliamp Meter: 0 to 100% ──</span>
+  <span class="hl-key">- platform:</span> <span class="hl-str">template</span>
+    <span class="hl-key">name:</span> <span class="hl-str">"Milliamp Gauge"</span>
+    <span class="hl-key">id:</span> <span class="hl-str">milli_value</span>
+    <span class="hl-key">icon:</span> <span class="hl-str">"mdi:gauge"</span>
+    <span class="hl-key">min_value:</span> <span class="hl-num">0</span>
+    <span class="hl-key">max_value:</span> <span class="hl-num">100</span>
+    <span class="hl-key">step:</span> <span class="hl-num">1</span>
+    <span class="hl-key">initial_value:</span> <span class="hl-num">0</span>
+    <span class="hl-key">unit_of_measurement:</span> <span class="hl-str">"%"</span>
+    <span class="hl-key">optimistic:</span> <span class="hl-num">true</span>
+    <span class="hl-key">set_action:</span>
+      <span class="hl-key">- output.set_level:</span>
+          <span class="hl-key">id:</span> <span class="hl-str">milli_dac</span>
+          <span class="hl-key">level:</span> <span class="hl-str">!lambda "return x / 100.0;"</span>
+
+  <span class="hl-comment"># ── 4-Terminal Gauge: 0 to 100% ──</span>
+  <span class="hl-comment"># (unidirectional — 0V = rest, 3.3V = full deflection)</span>
+  <span class="hl-key">- platform:</span> <span class="hl-str">template</span>
+    <span class="hl-key">name:</span> <span class="hl-str">"4-Terminal Gauge"</span>
+    <span class="hl-key">id:</span> <span class="hl-str">gauge4_value</span>
+    <span class="hl-key">icon:</span> <span class="hl-str">"mdi:gauge"</span>
+    <span class="hl-key">min_value:</span> <span class="hl-num">0</span>
+    <span class="hl-key">max_value:</span> <span class="hl-num">100</span>
+    <span class="hl-key">step:</span> <span class="hl-num">1</span>
+    <span class="hl-key">initial_value:</span> <span class="hl-num">0</span>
+    <span class="hl-key">unit_of_measurement:</span> <span class="hl-str">"%"</span>
+    <span class="hl-key">optimistic:</span> <span class="hl-num">true</span>
+    <span class="hl-key">set_action:</span>
+      <span class="hl-key">- output.set_level:</span>
+          <span class="hl-key">id:</span> <span class="hl-str">gauge4_dac</span>
+          <span class="hl-key">level:</span> <span class="hl-str">!lambda "return x / 100.0;"</span>
+
+  <span class="hl-comment"># ── 5-Terminal Gauge: -100 to +100 (bidirectional) ──</span>
+  <span class="hl-comment"># Negative = one direction, 0 = rest, Positive = other</span>
+  <span class="hl-key">- platform:</span> <span class="hl-str">template</span>
+    <span class="hl-key">name:</span> <span class="hl-str">"5-Terminal Gauge"</span>
+    <span class="hl-key">id:</span> <span class="hl-str">gauge5_value</span>
+    <span class="hl-key">icon:</span> <span class="hl-str">"mdi:gauge"</span>
+    <span class="hl-key">min_value:</span> <span class="hl-num">-100</span>
+    <span class="hl-key">max_value:</span> <span class="hl-num">100</span>
+    <span class="hl-key">step:</span> <span class="hl-num">1</span>
+    <span class="hl-key">initial_value:</span> <span class="hl-num">0</span>
+    <span class="hl-key">optimistic:</span> <span class="hl-num">true</span>
+    <span class="hl-key">set_action:</span>
+      <span class="hl-key">- lambda:</span> <span class="hl-str">|-</span>
+          <span class="hl-str">if (x >= 0) {</span>
+          <span class="hl-str">  id(gauge5_in1).set_level(x / 100.0);</span>
+          <span class="hl-str">  id(gauge5_in2).set_level(0.0);</span>
+          <span class="hl-str">} else {</span>
+          <span class="hl-str">  id(gauge5_in1).set_level(0.0);</span>
+          <span class="hl-str">  id(gauge5_in2).set_level(-x / 100.0);</span>
+          <span class="hl-str">}</span>
+
+<span class="hl-comment"># ═══════════════════════════════════════════════════</span>
+<span class="hl-comment"># EXAMPLE: Map real HA sensors to gauges</span>
+<span class="hl-comment"># Uncomment and customize any of these</span>
+<span class="hl-comment"># ═══════════════════════════════════════════════════</span>
+
+<span class="hl-comment"># sensor:</span>
+<span class="hl-comment">#</span>
+<span class="hl-comment">#   # ── Power usage → Milliamp Meter ──</span>
+<span class="hl-comment">#   # Full scale = 5000W</span>
+<span class="hl-comment">#   - platform: homeassistant</span>
+<span class="hl-comment">#     entity_id: sensor.home_power_usage</span>
+<span class="hl-comment">#     id: ha_power</span>
+<span class="hl-comment">#     on_value:</span>
+<span class="hl-comment">#       - output.set_level:</span>
+<span class="hl-comment">#           id: milli_dac</span>
+<span class="hl-comment">#           level: !lambda |-</span>
+<span class="hl-comment">#             float val = x / 5000.0;</span>
+<span class="hl-comment">#             return clamp(val, 0.0f, 1.0f);</span>
+<span class="hl-comment">#</span>
+<span class="hl-comment">#   # ── Outdoor temperature → 4-Terminal Gauge ──</span>
+<span class="hl-comment">#   # Maps 0°F–100°F to full scale</span>
+<span class="hl-comment">#   - platform: homeassistant</span>
+<span class="hl-comment">#     entity_id: sensor.outdoor_temperature</span>
+<span class="hl-comment">#     id: ha_outdoor_temp</span>
+<span class="hl-comment">#     on_value:</span>
+<span class="hl-comment">#       - output.set_level:</span>
+<span class="hl-comment">#           id: gauge4_dac</span>
+<span class="hl-comment">#           level: !lambda |-</span>
+<span class="hl-comment">#             float val = x / 100.0;</span>
+<span class="hl-comment">#             return clamp(val, 0.0f, 1.0f);</span>
+<span class="hl-comment">#</span>
+<span class="hl-comment">#   # ── Indoor temp deviation → 5-Terminal Gauge ──</span>
+<span class="hl-comment">#   # Centered at setpoint (72°F), deflects ±10°F</span>
+<span class="hl-comment">#   - platform: homeassistant</span>
+<span class="hl-comment">#     entity_id: sensor.ecobee_current_temperature</span>
+<span class="hl-comment">#     id: ha_indoor_temp</span>
+<span class="hl-comment">#     on_value:</span>
+<span class="hl-comment">#       - lambda: |-</span>
+<span class="hl-comment">#           float deviation = (x - 72.0) / 10.0;</span>
+<span class="hl-comment">#           deviation = clamp(deviation, -1.0f, 1.0f);</span>
+<span class="hl-comment">#           if (deviation >= 0) {</span>
+<span class="hl-comment">#             id(gauge5_in1).set_level(deviation);</span>
+<span class="hl-comment">#             id(gauge5_in2).set_level(0.0);</span>
+<span class="hl-comment">#           } else {</span>
+<span class="hl-comment">#             id(gauge5_in1).set_level(0.0);</span>
+<span class="hl-comment">#             id(gauge5_in2).set_level(-deviation);</span>
+<span class="hl-comment">#           }</span>
+
+<span class="hl-comment"># ═══════════════════════════════════════════════════</span>
+<span class="hl-comment"># BONUS: Read the alarm contacts as binary sensors</span>
+<span class="hl-comment"># Wire m.c. → GPIO input, f.c. → GND</span>
+<span class="hl-comment"># When needle trips, contact closes → sensor turns ON</span>
+<span class="hl-comment"># ═══════════════════════════════════════════════════</span>
+
+<span class="hl-comment"># binary_sensor:</span>
+<span class="hl-comment">#   - platform: gpio</span>
+<span class="hl-comment">#     name: "5-Terminal Alarm Contact"</span>
+<span class="hl-comment">#     pin:</span>
+<span class="hl-comment">#       number: GPIO32</span>
+<span class="hl-comment">#       mode: INPUT_PULLUP</span>
+<span class="hl-comment">#       inverted: true</span>
+<span class="hl-comment">#</span>
+<span class="hl-comment">#   - platform: gpio</span>
+<span class="hl-comment">#     name: "4-Terminal Alarm Contact"</span>
+<span class="hl-comment">#     pin:</span>
+<span class="hl-comment">#       number: GPIO33</span>
+<span class="hl-comment">#       mode: INPUT_PULLUP</span>
+<span class="hl-comment">#       inverted: true</span></pre>
+      </div>
+    </div>
+
+    <div class="config-note">
+      <p><strong>What you get in Home Assistant:</strong> Three slider entities — "Milliamp Gauge" (0–100%), "4-Terminal Gauge" (0–100%), and "5-Terminal Gauge" (-100 to +100). Move the sliders, the needles move. Immediately.</p>
+      <p><strong>Sensor mapping examples:</strong> Three commented-out examples show real-world mappings. The Ecobee temperature deviation on the 5-terminal gauge is particularly fitting — centered when your house is at setpoint, deflects one way when too hot, the other when too cold. Very much in the spirit of what the "Balanced Relay" was originally designed to show.</p>
+      <p><strong>Bonus — alarm contacts:</strong> The commented-out binary_sensor block lets you read the physical alarm contacts. Wire m.c. to a GPIO input and f.c. to GND. When you drive the needle hard enough to trip the contact, HA sees it as a binary sensor turning on. You could trigger an actual Home Assistant automation from a 1940s alarm mechanism.</p>
+      <p><strong>Safety:</strong> The 5-terminal gauge outputs start at <code>max_power: 0.10</code> (10% duty cycle cap). The two DAC gauges are inherently current-limited by their coil resistance and the 820Ω resistor. Increase <code>max_power</code> gradually during calibration.</p>
+    </div>
+  </div>
+</div>
+
+<!-- CALIBRATION TAB -->
+<div id="calibration" class="tab-content">
+  <div class="section-title">Calibration — Step by Step</div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-text"><strong>Flash the config as-is</strong> with <code>max_power: 0.10</code> on the DRV8871 outputs. The DAC-driven gauges are self-limiting so they're safe from the start.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-text"><strong>Test the milliamp meter first</strong> — it's the simplest. Move the "Milliamp Gauge" slider to 50% in HA. The needle should move to roughly mid-scale. At 100% it should be near the "4" mark. If it goes past 4, reduce <code>max_power</code> on <code>milli_dac</code> until 100% = full scale.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-text"><strong>Test the 4-terminal gauge (3kΩ).</strong> Move its slider to 25%, then 50%, then 100%. Watch the needle. At 3kΩ the current is so low this should be very gentle. If 100% doesn't reach full deflection, that's fine — it means this gauge was designed for higher voltage operation. You can try powering it through a resistor from the 5V pin instead if you need more range.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-text"><strong>Test the 5-terminal gauge (36Ω) carefully.</strong> Move its slider to +20, then +50. Watch the needle. If it barely moves at +50, increase <code>max_power</code> to 0.20 and re-flash. If it slams to the stop at +20, drop to 0.05. Repeat until +100 gives full-scale deflection without hitting the mechanical stop.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-text"><strong>Test the reverse direction.</strong> Move the 5-terminal slider to -20, -50, -100. Verify it deflects the opposite way. If one direction is weaker, add an asymmetry correction in the lambda (multiply the weak side by a factor like 1.15).</div>
+    </div>
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-text"><strong>If 3.3V isn't enough for the DRV8871:</strong> Move the VM wire from 3V3 to the ESP32's <code>VIN</code>/<code>5V</code> pin. Drop <code>max_power</code> back down to 0.05 and recalibrate — you'll have ~50% more voltage headroom.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">7</div>
+      <div class="step-text"><strong>Lock in your final <code>max_power</code> values.</strong> These act as permanent safety limits. Even a buggy automation can't overdrive the gauges past these caps.</div>
+    </div>
+  </div>
+
+  <div class="notes-grid" style="margin-top: 2rem;">
+    <div class="note-card red">
+      <h3>Protect the Vintage Coils</h3>
+      <p>These are 80+ year old instruments with irreplaceable fine wire coils. Always err on the side of too little current rather than too much. You can always increase — you can't un-burn a coil.</p>
+    </div>
+    <div class="note-card blue">
+      <h3>Needle Damping</h3>
+      <p>If the needle oscillates or bounces when values change, add an <code>exponential_moving_average</code> filter to the sensor, or use small delay steps in the lambda to ramp the output gradually instead of jumping directly to the target.</p>
+    </div>
+    <div class="note-card amber">
+      <h3>Sticky Movements</h3>
+      <p>If a needle doesn't move at all, it may be stuck from age. Gently tap the gauge face while applying a signal. If it breaks free and moves smoothly, the pivot just needed unseating. A tiny drop of clock oil on the jewel bearings can help long-term.</p>
+    </div>
+    <div class="note-card">
+      <h3>The 4-Terminal Might Be Bidirectional</h3>
+      <p>Even though it only has Coil + and Coil −, some galvanometers can deflect both directions based on current polarity. Try swapping the DAC wire between Coil + and Coil − to see if the needle moves the other way. If it does, you could use the DRV8871 approach for this one too (or just pick the direction you want).</p>
+    </div>
+  </div>
+</div>
+
+<!-- BOM TAB -->
+<div id="bom" class="tab-content">
+  <div class="section-title">Bill of Materials — Complete Panel</div>
+  <table class="bom-table">
+    <thead>
+      <tr>
+        <th>Qty</th>
+        <th>Component</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="bom-qty">1</td>
+        <td>ESP32-WROOM-32 Dev Board</td>
+        <td>Must be original ESP32 (has 2× DAC). Not S2/S3/C3.</td>
+      </tr>
+      <tr>
+        <td class="bom-qty">1</td>
+        <td>DRV8871 Breakout Board</td>
+        <td>Adafruit #3190 (~$8) or generic (~$4). Only need one now!</td>
+      </tr>
+      <tr>
+        <td class="bom-qty">1</td>
+        <td>820Ω Resistor, ¼W</td>
+        <td>For the milliamp meter. 1kΩ also works.</td>
+      </tr>
+      <tr>
+        <td class="bom-qty">~6</td>
+        <td>Hookup wires, 22 AWG</td>
+        <td>Solid core for terminals. 3 gauge connections + power/ground.</td>
+      </tr>
+      <tr>
+        <td class="bom-qty">1</td>
+        <td>USB cable + 5V adapter</td>
+        <td>Powers the ESP32. Any phone charger works.</td>
+      </tr>
+      <tr>
+        <td class="bom-qty">1</td>
+        <td>Small perfboard (optional)</td>
+        <td>Keep wiring tidy. Mount behind the panel.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="config-note" style="margin-top: 2rem;">
+    <p><strong>Total cost:</strong> ~$12–15 in parts. One DRV8871 instead of two (saved ~$4–8 thanks to the terminal measurements).</p>
+    <p><strong>Pin usage:</strong> GPIO25 (DAC1) → milliamp meter, GPIO26 (DAC2) → 4-terminal gauge, GPIO16/17 (PWM) → DRV8871 → 5-terminal gauge. Only 4 GPIO pins total, leaving plenty free for the bonus alarm contact inputs or future additions.</p>
+    <p><strong>Mounting:</strong> The ESP32 + DRV8871 + resistor can all fit on a tiny perfboard or breadboard. Tuck it behind the panel or in the lower compartment. Route the USB cable out the back. The whole thing looks stock from the front.</p>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.tab).classList.add('active');
+    });
+  });
+
+  function copyCode() {
+    const code = document.getElementById('yaml-code').textContent;
+    navigator.clipboard.writeText(code).then(() => {
+      const btn = document.querySelector('.copy-btn');
+      btn.textContent = 'Copied!';
+      btn.style.background = '#4ade80';
+      btn.style.color = '#1a1a1a';
+      setTimeout(() => {
+        btn.textContent = 'Copy';
+        btn.style.background = '';
+        btn.style.color = '';
+      }, 2000);
+    });
+  }
+</script>
+</body>
+</html>
