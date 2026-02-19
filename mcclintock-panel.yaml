@@ -84,7 +84,7 @@ output:
   - platform: ledc
     id: gauge4_dac
     pin: GPIO26
-    frequency: 120 Hz   # <-- change this to sweep; try 120, 440, 500, 1000, 2000
+    frequency: 440 Hz   # <-- change this to sweep; try 120, 440, 500, 1000, 2000
     max_power: 1.0
 
   # ── 5-Terminal Gauge (36Ω): DRV8871 H-bridge ──
