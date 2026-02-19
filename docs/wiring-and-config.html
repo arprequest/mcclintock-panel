@@ -365,13 +365,13 @@
       </div>
       <div class="terminal-row">
         <span class="terminal-name">m.c.</span>
-        <span class="terminal-func">Moving contact (alarm switch)</span>
-        <span class="terminal-ignore">Not used</span>
+        <span class="terminal-func">Moving contact (needle — live)</span>
+        <span class="terminal-use">→ GPIO32 (INPUT_PULLUP)</span>
       </div>
       <div class="terminal-row">
         <span class="terminal-name">f.c.</span>
-        <span class="terminal-func">Fixed contact (alarm switch)</span>
-        <span class="terminal-ignore">Not used</span>
+        <span class="terminal-func">Fixed contact (both stops wired together)</span>
+        <span class="terminal-use">→ GND</span>
       </div>
     </div>
 
@@ -418,9 +418,9 @@
       <p>At 36Ω, direct drive would pull ~92mA — too much for the DAC. The DRV8871 handles the current. PWM duty cycle controls needle position.</p>
     </div>
     <div class="note-card blue">
-      <h3>Alarm Contacts</h3>
-      <p><strong>m.c./f.c. and fixed/moving contact — unused for driving.</strong></p>
-      <p>Fun bonus: you could wire these to ESP32 input pins and read them as binary sensors in HA. The needle physically closes a switch when it hits the trip point — a real electromechanical alarm in your smart home.</p>
+      <h3>Alarm Contacts — 5-Terminal</h3>
+      <p><strong>m.c. → GPIO32 (INPUT_PULLUP) · f.c. → GND</strong></p>
+      <p>Both side contacts are wired together at f.c. — the needle trips the same circuit whether it swings left or right (center-off design). Enabled as a binary sensor in HA: <code>"5-Terminal Alarm Contact"</code> turns ON at either extreme deflection. Wire m.c. to GPIO32 and f.c. to GND.</p>
     </div>
   </div>
 </div>
@@ -613,12 +613,15 @@
         <text x="62" y="131" text-anchor="middle" font-size="6" fill="#222" font-weight="700">+</text>
         <circle cx="112" cy="128" r="5" fill="#888" stroke="#aaa" stroke-width="1"/>
         <text x="112" y="131" text-anchor="middle" font-size="6" fill="#222" font-weight="700">−</text>
-        <!-- Unused terminals (dimmed) -->
+        <!-- res — unused -->
         <circle cx="30" cy="128" r="4" fill="#555" stroke="#666" stroke-width="0.8" opacity="0.4"/>
         <text x="30" y="143" text-anchor="middle" font-size="5" fill="#555" font-family="IBM Plex Mono" opacity="0.5">res</text>
-        <circle cx="145" cy="128" r="4" fill="#555" stroke="#666" stroke-width="0.8" opacity="0.4"/>
-        <text x="145" y="143" text-anchor="middle" font-size="5" fill="#555" font-family="IBM Plex Mono" opacity="0.5">m.c.</text>
-        <text x="87" y="143" text-anchor="middle" font-size="5" fill="#555" font-family="IBM Plex Mono" opacity="0.5">f.c. (underneath)</text>
+        <!-- m.c. → GPIO32 -->
+        <circle cx="145" cy="128" r="5" fill="#888" stroke="#60a5fa" stroke-width="1"/>
+        <text x="145" y="131" text-anchor="middle" font-size="5" fill="#222" font-weight="700">m.c.</text>
+        <text x="145" y="143" text-anchor="middle" font-size="5" fill="#60a5fa" font-family="IBM Plex Mono">GP32</text>
+        <!-- f.c. → GND -->
+        <text x="87" y="143" text-anchor="middle" font-size="5" fill="#888" font-family="IBM Plex Mono">f.c. → GND</text>
       </g>
 
       <!-- Wire: DRV OUT1 → gauge + -->
@@ -669,8 +672,11 @@
         <line x1="460" y1="18" x2="476" y2="18" stroke="#f87171" stroke-width="2.5"/>
         <text x="482" y="22" fill="#999">3.3V power (or 5V VIN if more drive needed)</text>
 
-        <line x1="460" y1="36" x2="476" y2="36" stroke="#888" stroke-width="2.5"/>
-        <text x="482" y="40" fill="#999">Common ground</text>
+        <line x1="460" y1="36" x2="476" y2="36" stroke="#60a5fa" stroke-width="2.5"/>
+        <text x="482" y="40" fill="#999">GPIO32 (INPUT_PULLUP) ← 5-Terminal m.c. (alarm contact)</text>
+
+        <line x1="460" y1="54" x2="476" y2="54" stroke="#888" stroke-width="2.5"/>
+        <text x="482" y="58" fill="#999">Common ground</text>
       </g>
     </svg>
   </div>
@@ -686,7 +692,7 @@
     </div>
     <div class="note-card amber">
       <h3>Unused Terminals</h3>
-      <p>The alarm contacts (m.c., f.c., fixed contact, moving contact) aren't needed for driving the needle. But they're a cool bonus — wire them to ESP32 GPIO inputs and you get a physical alarm trip sensor in Home Assistant.</p>
+      <p>The 5-terminal alarm contacts are now wired — m.c. → GPIO32, f.c. → GND. The 4-terminal relay contacts (moving/fixed contact) are still unused; wire to GPIO33 if you want that relay's snap to be readable in HA too.</p>
     </div>
     <div class="note-card red">
       <h3>VM Voltage</h3>
@@ -889,25 +895,28 @@
           <span class="hl-str">}</span>
 
 <span class="hl-comment"># ═══════════════════════════════════════════════════</span>
-<span class="hl-comment"># BONUS: Read the alarm contacts as binary sensors</span>
-<span class="hl-comment"># Wire m.c. → GPIO input, f.c. → GND</span>
-<span class="hl-comment"># When needle trips, contact closes → sensor turns ON</span>
+<span class="hl-comment"># ALARM CONTACTS — 5-Terminal Gauge</span>
+<span class="hl-comment"># Both side contacts wired together at f.c. (center-off)</span>
+<span class="hl-comment"># Needle trips same circuit in either direction</span>
+<span class="hl-comment"># Wire: m.c. → GPIO32, f.c. → GND</span>
 <span class="hl-comment"># ═══════════════════════════════════════════════════</span>
 
-<span class="hl-comment"># binary_sensor:</span>
-<span class="hl-comment">#   - platform: gpio</span>
-<span class="hl-comment">#     name: "5-Terminal Alarm Contact"</span>
-<span class="hl-comment">#     pin:</span>
-<span class="hl-comment">#       number: GPIO32</span>
-<span class="hl-comment">#       mode: INPUT_PULLUP</span>
-<span class="hl-comment">#       inverted: true</span>
-<span class="hl-comment">#</span>
-<span class="hl-comment">#   - platform: gpio</span>
-<span class="hl-comment">#     name: "4-Terminal Alarm Contact"</span>
-<span class="hl-comment">#     pin:</span>
-<span class="hl-comment">#       number: GPIO33</span>
-<span class="hl-comment">#       mode: INPUT_PULLUP</span>
-<span class="hl-comment">#       inverted: true</span></pre>
+<span class="hl-section">binary_sensor:</span>
+  <span class="hl-key">- platform:</span> <span class="hl-str">gpio</span>
+    <span class="hl-key">name:</span> <span class="hl-str">"5-Terminal Alarm Contact"</span>
+    <span class="hl-key">pin:</span>
+      <span class="hl-key">number:</span> <span class="hl-str">GPIO32</span>
+      <span class="hl-key">mode:</span> <span class="hl-str">INPUT_PULLUP</span>
+      <span class="hl-key">inverted:</span> <span class="hl-num">true</span>
+
+  <span class="hl-comment"># ── 4-Terminal relay contact (optional) ──</span>
+  <span class="hl-comment"># Wire: moving contact → GPIO33, fixed contact → GND</span>
+  <span class="hl-comment"># - platform: gpio</span>
+  <span class="hl-comment">#   name: "4-Terminal Alarm Contact"</span>
+  <span class="hl-comment">#   pin:</span>
+  <span class="hl-comment">#     number: GPIO33</span>
+  <span class="hl-comment">#     mode: INPUT_PULLUP</span>
+  <span class="hl-comment">#     inverted: true</span></pre>
       </div>
     </div>
 
@@ -915,7 +924,7 @@
       <p><strong>What you get in Home Assistant:</strong> Three slider entities — "Milliamp Gauge" (0–100%), "4-Terminal Gauge" (0–100%), and "5-Terminal Gauge" (-100 to +100) for manual control, plus live solar sensor mappings.</p>
       <p><strong>Solar integration (SolarEdge 16.5kW):</strong> The milliamp meter tracks current solar generation — <code>sensor.solaredge_current_power</code> scaled to 16,500W full scale. The 5-terminal gauge currently shows generation vs 50% capacity (needle centers at 8,250W). When a grid energy meter becomes available, swap the 5-terminal entity for net grid power to show import/export instead.</p>
       <p><strong>Sound wave relay (4-terminal):</strong> This is a vintage polarized relay, not an analog meter. The paddle snaps between positions rather than sweeping. Best used as an on/off indicator — e.g., snap when solar is actively exporting, or when a security event triggers. The manual slider still works as a test control.</p>
-      <p><strong>Bonus — alarm contacts:</strong> The commented-out binary_sensor block lets you read the physical alarm contacts. Wire m.c. to a GPIO input and f.c. to GND. When you energize the coil enough to snap the paddle, HA sees it as a binary sensor. A 1940s alarm mechanism triggering a smart home automation.</p>
+      <p><strong>Alarm contacts — enabled:</strong> The 5-terminal binary sensor <code>"5-Terminal Alarm Contact"</code> is live. Both side contacts wire together at f.c. (center-off) — needle trips the same circuit in either direction. Wire m.c. → GPIO32, f.c. → GND. Turns ON at either extreme deflection — use in HA automations to react to very low or near-peak solar output.</p>
       <p><strong>Safety:</strong> The 5-terminal gauge outputs start at <code>max_power: 0.10</code> (10% duty cycle cap). The two DAC gauges are inherently current-limited by their coil resistance and the 820Ω resistor. Increase <code>max_power</code> gradually during calibration.</p>
     </div>
   </div>
@@ -1023,7 +1032,7 @@
 
   <div class="config-note" style="margin-top: 2rem;">
     <p><strong>Total cost:</strong> ~$12–15 in parts. One DRV8871 instead of two (saved ~$4–8 thanks to the terminal measurements).</p>
-    <p><strong>Pin usage:</strong> GPIO25 (DAC1) → milliamp meter, GPIO26 (DAC2) → 4-terminal gauge, GPIO16/17 (PWM) → DRV8871 → 5-terminal gauge. Only 4 GPIO pins total, leaving plenty free for the bonus alarm contact inputs or future additions.</p>
+    <p><strong>Pin usage:</strong> GPIO25 (DAC1) → milliamp meter, GPIO26 (DAC2) → sound wave relay, GPIO16/17 (PWM) → DRV8871 → 5-terminal gauge, GPIO32 (INPUT_PULLUP) ← 5-terminal m.c. alarm contact. 5 GPIO pins total.</p>
     <p><strong>Mounting:</strong> The ESP32 + DRV8871 + resistor can all fit on a tiny perfboard or breadboard. Tuck it behind the panel or in the lower compartment. Route the USB cable out the back. The whole thing looks stock from the front.</p>
   </div>
 </div>

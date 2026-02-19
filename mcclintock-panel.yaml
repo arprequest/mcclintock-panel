@@ -234,22 +234,26 @@ sensor:
           }
 
 # ═══════════════════════════════════════════════════
-# BONUS: Read alarm contacts as binary sensors
-# Wire m.c. → GPIO input, f.c. → GND
-# When needle trips, contact closes → sensor ON
+# ALARM CONTACTS — 5-Terminal Gauge
+# Both side contacts are wired together (f.c.).
+# Needle (m.c.) trips EITHER contact at full deflection.
+# Wire: m.c. → GPIO32, f.c. → GND
 # ═══════════════════════════════════════════════════
 
-# binary_sensor:
-#   - platform: gpio
-#     name: "5-Terminal Alarm Contact"
-#     pin:
-#       number: GPIO32
-#       mode: INPUT_PULLUP
-#       inverted: true
-#
-#   - platform: gpio
-#     name: "4-Terminal Alarm Contact"
-#     pin:
-#       number: GPIO33
-#       mode: INPUT_PULLUP
-#       inverted: true
+binary_sensor:
+  - platform: gpio
+    name: "5-Terminal Alarm Contact"
+    pin:
+      number: GPIO32
+      mode: INPUT_PULLUP
+      inverted: true
+
+  # ── 4-Terminal sound wave relay contacts ──
+  # Wire: moving contact → GPIO33, fixed contact → GND
+  # Snaps ON when relay energizes above pull-in threshold
+  # - platform: gpio
+  #   name: "4-Terminal Alarm Contact"
+  #   pin:
+  #     number: GPIO33
+  #     mode: INPUT_PULLUP
+  #     inverted: true
