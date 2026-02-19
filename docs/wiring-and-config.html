@@ -366,12 +366,12 @@
       <div class="terminal-row">
         <span class="terminal-name">m.c.</span>
         <span class="terminal-func">Moving contact (needle — live)</span>
-        <span class="terminal-use">→ GPIO32 (INPUT_PULLUP)</span>
+        <span class="terminal-ignore">To wire → GPIO32</span>
       </div>
       <div class="terminal-row">
         <span class="terminal-name">f.c.</span>
         <span class="terminal-func">Fixed contact (both stops wired together)</span>
-        <span class="terminal-use">→ GND</span>
+        <span class="terminal-ignore">To wire → GND</span>
       </div>
     </div>
 
@@ -418,9 +418,9 @@
       <p>At 36Ω, direct drive would pull ~92mA — too much for the DAC. The DRV8871 handles the current. PWM duty cycle controls needle position.</p>
     </div>
     <div class="note-card blue">
-      <h3>Alarm Contacts — 5-Terminal</h3>
-      <p><strong>m.c. → GPIO32 (INPUT_PULLUP) · f.c. → GND</strong></p>
-      <p>Both side contacts are wired together at f.c. — the needle trips the same circuit whether it swings left or right (center-off design). Enabled as a binary sensor in HA: <code>"5-Terminal Alarm Contact"</code> turns ON at either extreme deflection. Wire m.c. to GPIO32 and f.c. to GND.</p>
+      <h3>Alarm Contacts — 5-Terminal (to wire)</h3>
+      <p><strong>To connect: m.c. → GPIO32 (INPUT_PULLUP) · f.c. → GND</strong></p>
+      <p>Both side contacts are wired together at f.c. — the needle trips the same circuit whether it swings left or right (center-off design). ESPHome binary sensor <code>"5-Terminal Alarm Contact"</code> is already enabled in the config and ready — just run the two wires to activate it.</p>
     </div>
   </div>
 </div>
@@ -616,12 +616,12 @@
         <!-- res — unused -->
         <circle cx="30" cy="128" r="4" fill="#555" stroke="#666" stroke-width="0.8" opacity="0.4"/>
         <text x="30" y="143" text-anchor="middle" font-size="5" fill="#555" font-family="IBM Plex Mono" opacity="0.5">res</text>
-        <!-- m.c. → GPIO32 -->
-        <circle cx="145" cy="128" r="5" fill="#888" stroke="#60a5fa" stroke-width="1"/>
-        <text x="145" y="131" text-anchor="middle" font-size="5" fill="#222" font-weight="700">m.c.</text>
-        <text x="145" y="143" text-anchor="middle" font-size="5" fill="#60a5fa" font-family="IBM Plex Mono">GP32</text>
-        <!-- f.c. → GND -->
-        <text x="87" y="143" text-anchor="middle" font-size="5" fill="#888" font-family="IBM Plex Mono">f.c. → GND</text>
+        <!-- m.c. — to be wired to GPIO32 -->
+        <circle cx="145" cy="128" r="4" fill="#555" stroke="#60a5fa" stroke-width="0.8" opacity="0.6"/>
+        <text x="145" y="131" text-anchor="middle" font-size="5" fill="#555" font-family="IBM Plex Mono" opacity="0.6">m.c.</text>
+        <text x="145" y="143" text-anchor="middle" font-size="5" fill="#60a5fa" font-family="IBM Plex Mono" opacity="0.6">→ GP32*</text>
+        <!-- f.c. — to be wired to GND -->
+        <text x="87" y="143" text-anchor="middle" font-size="5" fill="#888" font-family="IBM Plex Mono" opacity="0.6">f.c. → GND*</text>
       </g>
 
       <!-- Wire: DRV OUT1 → gauge + -->
@@ -672,11 +672,10 @@
         <line x1="460" y1="18" x2="476" y2="18" stroke="#f87171" stroke-width="2.5"/>
         <text x="482" y="22" fill="#999">3.3V power (or 5V VIN if more drive needed)</text>
 
-        <line x1="460" y1="36" x2="476" y2="36" stroke="#60a5fa" stroke-width="2.5"/>
-        <text x="482" y="40" fill="#999">GPIO32 (INPUT_PULLUP) ← 5-Terminal m.c. (alarm contact)</text>
+        <line x1="460" y1="36" x2="476" y2="36" stroke="#888" stroke-width="2.5"/>
+        <text x="482" y="40" fill="#999">Common ground</text>
 
-        <line x1="460" y1="54" x2="476" y2="54" stroke="#888" stroke-width="2.5"/>
-        <text x="482" y="58" fill="#999">Common ground</text>
+        <text x="460" y="58" fill="#555" font-style="italic">* GPIO32 ← m.c. alarm contact (not yet wired)</text>
       </g>
     </svg>
   </div>
@@ -924,7 +923,7 @@
       <p><strong>What you get in Home Assistant:</strong> Three slider entities — "Milliamp Gauge" (0–100%), "4-Terminal Gauge" (0–100%), and "5-Terminal Gauge" (-100 to +100) for manual control, plus live solar sensor mappings.</p>
       <p><strong>Solar integration (SolarEdge 16.5kW):</strong> The milliamp meter tracks current solar generation — <code>sensor.solaredge_current_power</code> scaled to 16,500W full scale. The 5-terminal gauge currently shows generation vs 50% capacity (needle centers at 8,250W). When a grid energy meter becomes available, swap the 5-terminal entity for net grid power to show import/export instead.</p>
       <p><strong>Sound wave relay (4-terminal):</strong> This is a vintage polarized relay, not an analog meter. The paddle snaps between positions rather than sweeping. Best used as an on/off indicator — e.g., snap when solar is actively exporting, or when a security event triggers. The manual slider still works as a test control.</p>
-      <p><strong>Alarm contacts — enabled:</strong> The 5-terminal binary sensor <code>"5-Terminal Alarm Contact"</code> is live. Both side contacts wire together at f.c. (center-off) — needle trips the same circuit in either direction. Wire m.c. → GPIO32, f.c. → GND. Turns ON at either extreme deflection — use in HA automations to react to very low or near-peak solar output.</p>
+      <p><strong>Alarm contacts — config ready, wiring pending:</strong> The ESPHome binary sensor <code>"5-Terminal Alarm Contact"</code> is enabled and waiting. Both side contacts are wired together at f.c. (center-off design) — needle trips the same circuit in either direction. To activate: run m.c. → GPIO32 and f.c. → GND. Will appear in HA automatically once the wires are connected.</p>
       <p><strong>Safety:</strong> The 5-terminal gauge outputs start at <code>max_power: 0.10</code> (10% duty cycle cap). The two DAC gauges are inherently current-limited by their coil resistance and the 820Ω resistor. Increase <code>max_power</code> gradually during calibration.</p>
     </div>
   </div>
@@ -1032,7 +1031,7 @@
 
   <div class="config-note" style="margin-top: 2rem;">
     <p><strong>Total cost:</strong> ~$12–15 in parts. One DRV8871 instead of two (saved ~$4–8 thanks to the terminal measurements).</p>
-    <p><strong>Pin usage:</strong> GPIO25 (DAC1) → milliamp meter, GPIO26 (DAC2) → sound wave relay, GPIO16/17 (PWM) → DRV8871 → 5-terminal gauge, GPIO32 (INPUT_PULLUP) ← 5-terminal m.c. alarm contact. 5 GPIO pins total.</p>
+    <p><strong>Pin usage:</strong> GPIO25 (DAC1) → milliamp meter, GPIO26 (DAC2) → sound wave relay, GPIO16/17 (PWM) → DRV8871 → 5-terminal gauge. 4 GPIO output pins currently wired. GPIO32 reserved for 5-terminal alarm contact (not yet wired).</p>
     <p><strong>Mounting:</strong> The ESP32 + DRV8871 + resistor can all fit on a tiny perfboard or breadboard. Tuck it behind the panel or in the lower compartment. Route the USB cable out the back. The whole thing looks stock from the front.</p>
   </div>
 </div>
