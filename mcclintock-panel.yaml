@@ -76,14 +76,15 @@ output:
     pin: GPIO25
     max_power: 1.0
 
-  # ── Sound Wave Relay (3kΩ): LEDC PWM at 60Hz ──
+  # ── Sound Wave Relay (3kΩ): LEDC PWM ──
   # GPIO26 → Coil + → Coil − → GND
   # Relay designed for AC audio signals — DC (DAC) does not actuate it.
-  # 60Hz PWM simulates AC; duty cycle controls coil current amplitude.
+  # PWM frequency must match relay's mechanical resonant frequency.
+  # Calibration sequence: try 120, 440, 500, 1000, 2000 Hz until paddle moves.
   - platform: ledc
     id: gauge4_dac
     pin: GPIO26
-    frequency: 60 Hz
+    frequency: 120 Hz   # <-- change this to sweep; try 120, 440, 500, 1000, 2000
     max_power: 1.0
 
   # ── 5-Terminal Gauge (36Ω): DRV8871 H-bridge ──
