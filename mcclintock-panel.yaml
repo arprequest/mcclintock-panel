@@ -76,12 +76,14 @@ output:
     pin: GPIO25
     max_power: 1.0
 
-  # ── 4-Terminal Gauge (3kΩ): DAC direct, no resistor ──
+  # ── Sound Wave Relay (3kΩ): LEDC PWM at 60Hz ──
   # GPIO26 → Coil + → Coil − → GND
-  # 3.3V / 3kΩ ≈ 1.1mA (well within DAC limits)
-  - platform: esp32_dac
+  # Relay designed for AC audio signals — DC (DAC) does not actuate it.
+  # 60Hz PWM simulates AC; duty cycle controls coil current amplitude.
+  - platform: ledc
     id: gauge4_dac
     pin: GPIO26
+    frequency: 60 Hz
     max_power: 1.0
 
   # ── 5-Terminal Gauge (36Ω): DRV8871 H-bridge ──
